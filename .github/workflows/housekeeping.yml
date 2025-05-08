@@ -63,8 +63,11 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Check for changes
-          if [[ $(git status --porcelain) ]]; then
+          # Explicitly ignore members.json
+          git restore --staged .github/workflows/members.json
+
+          # Check for changes in cspell.json
+          if [[ $(git status --porcelain cspell.json) ]]; then
             echo "Changes detected in cspell.json. Committing and pushing..."
             git add cspell.json
             git commit -m "[skip cspell] Update cspell.json with organization member names"
