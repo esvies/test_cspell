@@ -1,7 +1,9 @@
 import json
 import os
 
-# Updated paths
+# Environment variable for organization name
+ORG_NAME = os.getenv("ORG_NAME", "unknown")
+
 MEMBERS_FILE = ".github/workflows/members.json"
 CSPELL_FILE = "cspell.json"
 

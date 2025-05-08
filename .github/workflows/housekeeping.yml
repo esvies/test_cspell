@@ -18,27 +18,49 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Checkout the code
       - name: Check out the code
         uses: actions/checkout@v4
 
+      # Cache Node.js Dependencies
+      - name: Cache Node Modules
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
+
+      # Cache Python Dependencies
+      - name: Cache PIP
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: pip-cache-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            pip-cache-
+
+      # Setup Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "22"
 
+      # Install Dependencies
       - name: Install Dependencies
         run: |
-          npm install -g cspell markdownlint-cli
+          npm install -g cspell markdownlint-cli &
+          python -m pip install yamllint &
+          wait
 
-      - name: Install yamllint
-        run: python -m pip install yamllint
-
+      # Ensure cspell.json Exists
       - name: Ensure cspell.json Exists
         run: |
           if [ ! -f cspell.json ]; then
             echo '{"version": "0.2", "language": "en", "ignorePaths": [".devcontainer/**", ".vscode/**", ".github/**"], "ignoreWords": []}' > cspell.json
           fi
 
+      # Fetch Organization Members
       - name: Fetch Organization Members
         env:
           AUTH_TOKEN: ${{ secrets.ORG_READ_TOKEN }}
@@ -52,9 +74,11 @@ jobs:
           echo "Fetched members.json content:"
           cat .github/workflows/members.json
 
+      # Update cspell.json with Usernames
       - name: Update cspell.json with Usernames
         run: python .github/workflows/update_cspell.py
 
+      # Commit and Push Updates to cspell.json
       - name: Commit and Push Updates to cspell.json
         if: success()
         env:
@@ -63,10 +87,10 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Explicitly ignore members.json
+          # Ignore members.json from staging
           git restore --staged .github/workflows/members.json
 
-          # Check for changes in cspell.json
+          # Check for changes in cspell.json only
           if [[ $(git status --porcelain cspell.json) ]]; then
             echo "Changes detected in cspell.json. Committing and pushing..."
             git add cspell.json
@@ -77,13 +101,16 @@ jobs:
             exit 0
           fi
 
+      # Run cspell
       - name: Run cspell
         run: |
           cspell --config ./cspell.json "./**/*.md" || echo "cspell encountered no files or an error."
 
+      # Run markdownlint
       - name: Run markdownlint
         run: |
           markdownlint "./**/*.md" || echo "No markdown files found or markdownlint encountered an error."
 
+      # Run yamllint
       - name: Run yamllint
         run: yamllint .
