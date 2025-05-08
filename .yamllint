@@ -1,0 +1,38 @@
+---
+# https://yamllint.readthedocs.io/en/stable/rules.html
+extends: default
+ignore: |
+  .tox/
+  .cache
+
+rules:
+  # 120 chars should be enough, but don't fail if a line is longer
+  line-length:
+    max: 120
+    level: warning
+
+  truthy:
+    level: error
+    allowed-values: ['true', 'false']
+    check-keys: false
+
+  indentation:
+    level: error
+    indent-sequences: consistent
+    spaces: 2
+
+  braces:
+    max-spaces-inside: 1
+    level: error
+
+  brackets:
+    max-spaces-inside: 1
+    level: error
+
+  key-duplicates: enable
+  new-line-at-end-of-file: enable
+
+  new-lines:
+    type: unix
+
+  trailing-spaces: enable
