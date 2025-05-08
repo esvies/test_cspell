@@ -37,33 +37,36 @@ jobs:
             echo '{"version": "0.2", "language": "en", "ignorePaths": [".devcontainer/**", ".vscode/**", ".github/**"], "ignoreWords": []}' > cspell.json
           fi
 
-      - name: Verify Token
-        env:
-          AUTH_TOKEN: ${{ secrets.ORG_READ_TOKEN }}
-        run: |
-          echo "Verifying AUTH_TOKEN..."
-          if [ -z "$AUTH_TOKEN" ]; then
-            echo "AUTH_TOKEN is not set or is empty."
-            exit 1
-          else
-            echo "AUTH_TOKEN is set."
-          fi
-
       - name: Fetch Organization Members
         env:
           AUTH_TOKEN: ${{ secrets.ORG_READ_TOKEN }}
         run: |
-          echo "Fetching organization members from esvies..."
           curl -s -H "Authorization: Bearer $AUTH_TOKEN" \
           -H "Accept: application/vnd.github+json" \
           https://api.github.com/orgs/esvies/members > members.json
 
-          # Display fetched content for verification
           echo "Fetched members.json content:"
           cat members.json
 
       - name: Update cspell.json with Usernames
         run: python update_cspell.py
+
+      - name: Commit and Push Updates to cspell.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Check if cspell.json was modified
+          if [[ $(git status --porcelain) ]]; then
+            echo "Changes detected in cspell.json. Committing and pushing..."
+            git add cspell.json
+            git commit -m "Update cspell.json with organization member names"
+            git push
+          else
+            echo "No changes to commit."
+          fi
 
       - name: Run cspell
         run: |
