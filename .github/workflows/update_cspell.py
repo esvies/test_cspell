@@ -1,36 +1,42 @@
 import json
 import os
-import re  # Import the regex module
+import re
+import requests
 
-# Environment variable for organization name
+# Environment variable for organization name and token
 ORG_NAME = os.getenv("ORG_NAME", "unknown")
 AUTH_TOKEN = os.getenv("AUTH_TOKEN", None)  # Check for AUTH_TOKEN
 
-MEMBERS_FILE = ".github/workflows/members.json"
 CSPELL_FILE = "cspell.json"
 
-def load_json(file_path):
-    if not os.path.exists(file_path):
-        print(f"Error: {file_path} not found.")
+def fetch_members():
+    """
+    Fetches organization members from the GitHub API and returns them as a list of dictionaries.
+    """
+    if not AUTH_TOKEN:
+        print("AUTH_TOKEN is not set. Skipping member fetching and processing.")
         return []
-    try:
-        with open(file_path, "r") as file:
-            data = json.load(file)
-            print(f"Loaded data from {file_path}: {data}")
-            return data
-    except json.JSONDecodeError:
-        print(f"Error: Failed to parse {file_path}. Ensure it is valid JSON.")
+
+    url = f"https://api.github.com/orgs/{ORG_NAME}/members"
+    headers = {
+        "Authorization": f"Bearer {AUTH_TOKEN}",
+        "Accept": "application/vnd.github+json"
+    }
+
+    response = requests.get(url, headers=headers)
+    if response.status_code != 200:
+        print(f"Error: Failed to fetch members. HTTP Status: {response.status_code}")
         return []
+
+    return response.json()
 
 def process_login(username):
     """
     Splits the username by dashes, removes any suffix starting with an underscore,
     and returns the resulting words.
     """
-    # Remove any suffix starting with an underscore
-    username = re.sub(r"_.*$", "", username)
-    # Split the username by dashes
-    split_names = username.split("-")
+    username = re.sub(r"_.*$", "", username)  # Remove any suffix starting with an underscore
+    split_names = username.split("-")  # Split the username by dashes
     return [name for name in split_names if name]
 
 def extract_words(members):
@@ -38,20 +44,10 @@ def extract_words(members):
     Extracts words from the 'login' field of each member, processes them, and returns a set of unique words.
     """
     words = set()
-
-    if not isinstance(members, list):
-        print(f"Unexpected data type for members: {type(members)}. Expected a list.")
-        return words
-
     for member in members:
-        if not isinstance(member, dict):
-            print(f"Unexpected member format: {member}")
-            continue
-
         username = member.get("login", "")
         processed_words = process_login(username)
         words.update(processed_words)
-
     return words
 
 def update_cspell(words):
@@ -87,7 +83,13 @@ def main():
         print("AUTH_TOKEN is not set. Skipping member fetching and processing.")
         return
 
-    members = load_json(MEMBERS_FILE)
+    # Fetch members from the GitHub API
+    members = fetch_members()
+    if not members:
+        print("No members fetched. Exiting.")
+        return
+
+    # Process members and update cspell.json
     words = extract_words(members)
     update_cspell(words)
 

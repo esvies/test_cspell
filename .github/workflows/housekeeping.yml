@@ -29,6 +29,7 @@ jobs:
           key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-npm-
+          retention-days: 30  # Cache will be retained for 30 days
 
       - name: Cache PIP
         uses: actions/cache@v4
@@ -37,6 +38,7 @@ jobs:
           key: pip-cache-${{ hashFiles('requirements.txt') }}
           restore-keys: |
             pip-cache-
+          retention-days: 30  # Cache will be retained for 30 days
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -57,23 +59,11 @@ jobs:
             }' > cspell.json
           fi
 
-      - name: Fetch Organization Members
+      - name: Update cspell.json with Usernames
         if: secrets.ORG_READ_TOKEN != ''
         env:
           AUTH_TOKEN: ${{ secrets.ORG_READ_TOKEN }}
           ORG_NAME: ${{ github.repository_owner }}
-        run: |
-          echo "Fetching members from $ORG_NAME..."
-          curl -s -H "Authorization: Bearer $AUTH_TOKEN" \
-          -H "Accept: application/vnd.github+json" \
-          https://api.github.com/orgs/$ORG_NAME/members \
-          > .github/workflows/members.json
-
-          echo "Fetched members.json content:"
-          cat .github/workflows/members.json
-
-      - name: Update cspell.json with Usernames
-        if: secrets.ORG_READ_TOKEN != ''
         run: python .github/workflows/update_cspell.py
 
       - name: Commit and Push Updates to cspell.json
@@ -83,9 +73,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          # Ignore members.json from staging
-          git restore --staged .github/workflows/members.json
 
           # Check for changes in cspell.json only
           if [[ $(git status --porcelain cspell.json) ]]; then
