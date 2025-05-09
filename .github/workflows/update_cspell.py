@@ -1,5 +1,6 @@
 import json
 import os
+import re  # Import the regex module
 
 # Environment variable for organization name
 ORG_NAME = os.getenv("ORG_NAME", "unknown")
@@ -20,12 +21,26 @@ def load_json(file_path):
         print(f"Error: Failed to parse {file_path}. Ensure it is valid JSON.")
         return []
 
-def extract_first_names(members):
-    first_names = set()
+def process_login(username):
+    """
+    Splits the username by dashes, removes any suffix starting with an underscore,
+    and returns the resulting words.
+    """
+    # Remove any suffix starting with an underscore
+    username = re.sub(r"_.*$", "", username)
+    # Split the username by dashes
+    split_names = username.split("-")
+    return [name for name in split_names if name]
+
+def extract_words(members):
+    """
+    Extracts words from the 'login' field of each member, processes them, and returns a set of unique words.
+    """
+    words = set()
 
     if not isinstance(members, list):
         print(f"Unexpected data type for members: {type(members)}. Expected a list.")
-        return first_names
+        return words
 
     for member in members:
         if not isinstance(member, dict):
@@ -33,13 +48,15 @@ def extract_first_names(members):
             continue
 
         username = member.get("login", "")
-        split_names = username.replace("-", " ").replace("_", " ").split()
-        if split_names:
-            first_names.add(split_names[0])
+        processed_words = process_login(username)
+        words.update(processed_words)
 
-    return first_names
+    return words
 
-def update_cspell(first_names):
+def update_cspell(words):
+    """
+    Updates the cspell.json file by adding new words to the 'ignoreWords' list.
+    """
     if not os.path.exists(CSPELL_FILE):
         cspell_data = {
             "version": "0.2",
@@ -52,7 +69,7 @@ def update_cspell(first_names):
             cspell_data = json.load(file)
 
     existing_words = set(cspell_data.get("ignoreWords", []))
-    new_words = first_names - existing_words
+    new_words = words - existing_words
 
     if new_words:
         print(f"Adding {len(new_words)} new words to cspell.json: {new_words}")
@@ -66,8 +83,8 @@ def update_cspell(first_names):
 
 def main():
     members = load_json(MEMBERS_FILE)
-    first_names = extract_first_names(members)
-    update_cspell(first_names)
+    words = extract_words(members)
+    update_cspell(words)
 
 if __name__ == "__main__":
     main()
