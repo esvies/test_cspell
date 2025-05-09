@@ -23,12 +23,15 @@ def fetch_members():
         "Accept": "application/vnd.github+json"
     }
 
+    print(f"Fetching members from organization: {ORG_NAME}")
     response = requests.get(url, headers=headers)
     if response.status_code != 200:
         print(f"Error: Failed to fetch members. HTTP Status: {response.status_code}")
         return []
 
-    return response.json()
+    members = response.json()
+    print(f"Fetched {len(members)} members.")
+    return members
 
 def process_login(username):
     """
@@ -47,6 +50,7 @@ def extract_words(members):
     for member in members:
         username = member.get("login", "")
         processed_words = process_login(username)
+        print(f"Processed username '{username}' into words: {processed_words}")
         words.update(processed_words)
     return words
 
