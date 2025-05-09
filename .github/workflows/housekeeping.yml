@@ -60,7 +60,6 @@ jobs:
           fi
 
       - name: Update cspell.json with Usernames
-        if: secrets.ORG_READ_TOKEN != ''
         env:
           AUTH_TOKEN: ${{ secrets.ORG_READ_TOKEN }}
           ORG_NAME: ${{ github.repository_owner }}
