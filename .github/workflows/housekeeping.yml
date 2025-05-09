@@ -27,18 +27,14 @@ jobs:
         with:
           path: ~/.npm
           key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-npm-
-          retention-days: 30  # Cache will be retained for 30 days
+          restore-keys: ${{ runner.os }}-npm-
 
       - name: Cache PIP
         uses: actions/cache@v4
         with:
           path: ~/.cache/pip
           key: pip-cache-${{ hashFiles('requirements.txt') }}
-          restore-keys: |
-            pip-cache-
-          retention-days: 30  # Cache will be retained for 30 days
+          restore-keys: pip-cache-
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -85,12 +81,10 @@ jobs:
           fi
 
       - name: Run cspell
-        run: |
-          cspell --config ./cspell.json "./**/*.md"
+        run: cspell --config ./cspell.json "./**/*.md"
 
       - name: Run markdownlint
-        run: |
-          markdownlint "./**/*.md"
+        run: markdownlint "./**/*.md"
 
       - name: Run yamllint
         run: yamllint .
