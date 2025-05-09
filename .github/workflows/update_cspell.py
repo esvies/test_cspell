@@ -4,6 +4,7 @@ import re  # Import the regex module
 
 # Environment variable for organization name
 ORG_NAME = os.getenv("ORG_NAME", "unknown")
+AUTH_TOKEN = os.getenv("AUTH_TOKEN", None)  # Check for AUTH_TOKEN
 
 MEMBERS_FILE = ".github/workflows/members.json"
 CSPELL_FILE = "cspell.json"
@@ -82,6 +83,10 @@ def update_cspell(words):
         print("No new words to add.")
 
 def main():
+    if not AUTH_TOKEN:
+        print("AUTH_TOKEN is not set. Skipping member fetching and processing.")
+        return
+
     members = load_json(MEMBERS_FILE)
     words = extract_words(members)
     update_cspell(words)

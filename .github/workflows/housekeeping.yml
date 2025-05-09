@@ -53,18 +53,12 @@ jobs:
         run: |
           if [ ! -f cspell.json ]; then
             echo '{
-              "version": "0.2",
-              "language": "en",
-              "ignorePaths": [
-                ".devcontainer/**",
-                ".vscode/**",
-                ".github/**"
-              ],
               "ignoreWords": []
             }' > cspell.json
           fi
 
       - name: Fetch Organization Members
+        if: secrets.ORG_READ_TOKEN != ''
         env:
           AUTH_TOKEN: ${{ secrets.ORG_READ_TOKEN }}
           ORG_NAME: ${{ github.repository_owner }}
@@ -79,6 +73,7 @@ jobs:
           cat .github/workflows/members.json
 
       - name: Update cspell.json with Usernames
+        if: secrets.ORG_READ_TOKEN != ''
         run: python .github/workflows/update_cspell.py
 
       - name: Commit and Push Updates to cspell.json
