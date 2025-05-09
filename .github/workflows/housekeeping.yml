@@ -86,13 +86,11 @@ jobs:
 
       - name: Run cspell
         run: |
-          cspell --config ./cspell.json "./**/*.md" \
-          || echo "cspell encountered no files or an error."
+          cspell --config ./cspell.json "./**/*.md"
 
       - name: Run markdownlint
         run: |
-          markdownlint "./**/*.md" \
-          || echo "No markdown files found or markdownlint encountered an error."
+          markdownlint "./**/*.md"
 
       - name: Run yamllint
         run: yamllint .
