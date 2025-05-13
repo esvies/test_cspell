@@ -91,13 +91,10 @@ jobs:
           git push
 
       - name: Run cspell
-        if: env.changes_detected == 'true'
         run: cspell --config ./cspell.json "./**/*.md"
 
       - name: Run markdownlint
-        if: env.changes_detected == 'true'
         run: markdownlint "./**/*.md"
 
       - name: Run yamllint
-        if: env.changes_detected == 'true'
         run: yamllint .

@@ -1,13 +1,12 @@
 {
-  "version": "0.2",
-  "language": "en",
-  "ignorePaths": [
-    ".devcontainer/**",
-    ".vscode/**",
-    ".github/**"
-  ],
-  "ignoreWords": [
-    "snevs",
-    "Costi"
-  ]
+    "version": "0.2",
+    "language": "en",
+    "ignorePaths": [
+        ".devcontainer/**",
+        ".vscode/**",
+        ".github/**"
+    ],
+    "ignoreWords": [
+        "snevs"
+    ]
 }
