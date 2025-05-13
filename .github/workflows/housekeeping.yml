@@ -56,35 +56,48 @@ jobs:
           fi
 
       - name: Update cspell.json with Usernames
+        id: update_cspell
         env:
           AUTH_TOKEN: ${{ secrets.ORG_READ_TOKEN }}
           ORG_NAME: ${{ github.repository_owner }}
         run: python .github/workflows/update_cspell.py
 
+      - name: Check for cspell.json Changes
+        id: check_cspell_changes
+        run: |
+          if [[ $(git diff --name-only cspell.json) ]]; then
+            echo "changes_detected=true" >> $GITHUB_ENV
+          else
+            echo "changes_detected=false" >> $GITHUB_ENV
+          fi
+
       - name: Commit and Push Updates to cspell.json
-        if: success()
+        if: env.changes_detected == 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # Configure Git user
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Check for changes in cspell.json only
-          if [[ $(git status --porcelain cspell.json) ]]; then
-            echo "Changes detected in cspell.json."
-            git add cspell.json
-            git commit -m "[skip cspell] Update cspell.json with org member names"
-            git push
-          else
-            echo "No changes to commit."
-            exit 0
-          fi
+          # Enable commit signing
+          git config commit.gpgSign true
+          git config gpg.format ssh
+          git config user.signingkey $GITHUB_TOKEN
+
+          # Commit and push changes
+          git add cspell.json
+          git commit -S -m "[skip cspell] Update cspell.json with org member names"
+          git push
 
       - name: Run cspell
+        if: env.changes_detected == 'true'
         run: cspell --config ./cspell.json "./**/*.md"
 
       - name: Run markdownlint
+        if: env.changes_detected == 'true'
         run: markdownlint "./**/*.md"
 
       - name: Run yamllint
+        if: env.changes_detected == 'true'
         run: yamllint .
