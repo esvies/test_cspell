@@ -2,7 +2,7 @@ import json
 import os
 import requests
 
-# Environment variable for organization name and token
+# Environment variables
 ORG_NAME = os.getenv("ORG_NAME", "unknown")
 AUTH_TOKEN = os.getenv("AUTH_TOKEN", None)
 IGNORE_FILE_PATH = os.getenv("IGNORE_FILE_PATH", None)
@@ -80,7 +80,7 @@ def get_existing_ignore_words():
 
 def write_ignore_config(words):
     """
-    Writes the combined ignore words to a temporary cspell config file.
+    Writes the combined ignore words to a temporary cspell.json config file.
     """
     if not IGNORE_FILE_PATH:
         print("IGNORE_FILE_PATH is not set. Exiting.")
@@ -98,6 +98,7 @@ def write_ignore_config(words):
 
     with open(IGNORE_FILE_PATH, "w") as file:
         json.dump(config, file, indent=2)
+
     print(f"Ignore config written to {IGNORE_FILE_PATH}")
 
 def main():
