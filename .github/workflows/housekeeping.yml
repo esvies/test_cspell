@@ -48,8 +48,9 @@ jobs:
 
       - name: Create Temporary Config File
         run: |
-          IGNORE_FILE_PATH=$(mktemp)
+          IGNORE_FILE_PATH=$(mktemp --suffix=".json")
           echo "IGNORE_FILE_PATH=$IGNORE_FILE_PATH" >> $GITHUB_ENV
+
 
       - name: Generate Ignore Content
         env:
