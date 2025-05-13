@@ -6,5 +6,7 @@
         ".vscode/**",
         ".github/**"
     ],
-    "ignoreWords": []
+    "ignoreWords": [
+        "snevs"
+    ]
 }
