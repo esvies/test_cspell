@@ -46,7 +46,7 @@ jobs:
           python -m pip install yamllint &
           wait
 
-      - name: Create Temporary Ignore File
+      - name: Create Temporary Config File
         run: |
           IGNORE_FILE_PATH=$(mktemp)
           echo "IGNORE_FILE_PATH=$IGNORE_FILE_PATH" >> $GITHUB_ENV
@@ -59,7 +59,13 @@ jobs:
         run: python .github/workflows/update_cspell.py
 
       - name: Run cspell
-        run: cspell --ignoreFile "${{ env.IGNORE_FILE_PATH }}" "./**/*.md"
+        run: cspell --config "${{ env.IGNORE_FILE_PATH }}" "./**/*.md"
 
-      - name: Cleanup Temporary Ignore File
+      - name: Run markdownlint
+        run: markdownlint "./**/*.md"
+
+      - name: Run yamllint
+        run: yamllint .
+
+      - name: Cleanup Temporary Config File
         run: rm "${{ env.IGNORE_FILE_PATH }}"

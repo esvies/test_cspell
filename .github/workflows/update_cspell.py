@@ -7,6 +7,8 @@ ORG_NAME = os.getenv("ORG_NAME", "unknown")
 AUTH_TOKEN = os.getenv("AUTH_TOKEN", None)
 IGNORE_FILE_PATH = os.getenv("IGNORE_FILE_PATH", None)
 
+CSPELL_FILE = "cspell.json"
+
 def fetch_members():
     """
     Fetches organization members from the GitHub API and returns them as a list of usernames.
@@ -52,47 +54,64 @@ def get_user_name(username):
 def extract_words(members):
     """
     Extracts names from the organization members and returns a set of unique words.
-    Splits full names into individual words.
     """
     words = set()
     for member in members:
         username = member
         full_name = get_user_name(username)
         if full_name:
-            # Split full name into individual words
-            name_parts = full_name.split()
-            words.update(name_parts)
+            words.update(full_name.split())
     return words
 
-def write_ignore_file(words):
+def get_existing_ignore_words():
     """
-    Writes the ignore words to the temporary ignore file.
+    Reads the existing ignoreWords from the main cspell.json file.
+    """
+    if not os.path.exists(CSPELL_FILE):
+        return set()
+
+    with open(CSPELL_FILE, "r") as file:
+        try:
+            data = json.load(file)
+            return set(data.get("ignoreWords", []))
+        except json.JSONDecodeError:
+            print("Error parsing cspell.json. Proceeding with empty ignoreWords.")
+            return set()
+
+def write_ignore_config(words):
+    """
+    Writes the combined ignore words to a temporary cspell config file.
     """
     if not IGNORE_FILE_PATH:
         print("IGNORE_FILE_PATH is not set. Exiting.")
         return
 
+    existing_words = get_existing_ignore_words()
+    combined_words = sorted(existing_words.union(words))
+
+    config = {
+        "version": "0.2",
+        "language": "en",
+        "ignorePaths": [".devcontainer/**", ".vscode/**", ".github/**"],
+        "ignoreWords": combined_words
+    }
+
     with open(IGNORE_FILE_PATH, "w") as file:
-        file.write("\n".join(sorted(words)))
-    print(f"Ignore words written to {IGNORE_FILE_PATH}")
+        json.dump(config, file, indent=2)
+    print(f"Ignore config written to {IGNORE_FILE_PATH}")
 
 def main():
     if not AUTH_TOKEN:
         print("AUTH_TOKEN is not set. Skipping member fetching and processing.")
         return
 
-    # Fetch organization members
     members = fetch_members()
     if not members:
         print("No members fetched.")
         return
 
-    # Extract words and write to ignore file
     words = extract_words(members)
-    if words:
-        write_ignore_file(words)
-    else:
-        print("No words to write to ignore file.")
+    write_ignore_config(words)
 
 if __name__ == "__main__":
     main()
