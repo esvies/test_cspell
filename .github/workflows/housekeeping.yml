@@ -58,6 +58,12 @@ jobs:
           IGNORE_FILE_PATH: ${{ env.IGNORE_FILE_PATH }}
         run: python .github/workflows/update_cspell.py
 
+      - name: Inspect Temporary Config File
+        run: |
+          echo "Contents of the temporary cspell config file:"
+          cat "${{ env.IGNORE_FILE_PATH }}"
+
+
       - name: Run cspell
         run: cspell --config "${{ env.IGNORE_FILE_PATH }}" "./**/*.md"
 
