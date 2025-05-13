@@ -6,6 +6,5 @@
         ".vscode/**",
         ".github/**"
     ],
-    "ignoreWords": [
-    ]
+    "ignoreWords": []
 }
