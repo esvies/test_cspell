@@ -1,6 +1,6 @@
 # test_cspell
 
-This file contains snevs and Costi, and Andrei
+This file contains and Costi, and Andrei
 
 Costi?
 
