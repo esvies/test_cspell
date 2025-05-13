@@ -72,13 +72,20 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Stage changes to avoid conflicts during pull
+          # Stage changes
           git add cspell.json
+
+          # Temporarily stash changes to allow pull with rebase
+          git stash --include-untracked
 
           # Pull the latest changes to avoid conflicts
           git pull --rebase origin main
 
+          # Apply the stashed changes
+          git stash pop
+
           # Commit and push changes
+          git add cspell.json
           git commit -m "[skip cspell] Update cspell.json with org member names"
           git push
 
