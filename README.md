@@ -9,5 +9,3 @@ Costi?
 testing.
 
 Rgg
-
-ssd
