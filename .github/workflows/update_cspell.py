@@ -113,7 +113,6 @@ def main():
     words = extract_words(members, existing_words)
     if not words:
         print("No new members found or no new words to add to cspell.json.")
-        print("No new members to process or add to cspell.json.")
         return
     update_cspell(words)
 
