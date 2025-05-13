@@ -77,15 +77,18 @@ jobs:
           # Process changed files
           FILES_CHANGED=$(git status --porcelain | awk '{print $2}')
           for file in $FILES_CHANGED; do
+            echo "Processing file: $file"
             CONTENT=$(base64 -w 0 "$file")
             FILENAME=$(basename "$file")
 
             # Fetch SHA if the file already exists
             SHA=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
               https://api.github.com/repos/${{ github.repository }}/contents/$file?ref=$BRANCH_NAME | jq -r .sha)
+            echo "Fetched SHA for $file: $SHA"
 
             # Handle new file creation
             if [ "$SHA" == "null" ]; then
+              echo "File $file does not exist in the branch. Creating a new file."
               SHA=""
             fi
 
