@@ -94,7 +94,10 @@ def update_cspell(words):
 
     if new_words:
         print(f"Adding {len(new_words)} new words to cspell.json: {new_words}")
-        cspell_data["ignoreWords"].extend(sorted(new_words))
+        # Update the ignoreWords list
+        updated_words = sorted(existing_words.union(new_words))
+        cspell_data["ignoreWords"] = updated_words
+
         with open(CSPELL_FILE, "w") as file:
             json.dump(cspell_data, file, indent=2)
         print("cspell.json updated successfully.")
@@ -106,17 +109,21 @@ def main():
         print("AUTH_TOKEN is not set. Skipping member fetching and processing.")
         return
 
+    # Ensure cspell.json exists
     ensure_cspell_exists()
 
+    # Load existing words
     with open(CSPELL_FILE, "r") as file:
         cspell_data = json.load(file)
         existing_words = set(cspell_data.get("ignoreWords", []))
 
+    # Fetch organization members
     members = fetch_members()
     if not members:
         print("No members fetched. Exiting.")
         return
 
+    # Extract words and update cspell.json
     words = extract_words(members, existing_words)
     if not words:
         print("No new members found or no new words to add to cspell.json.")
