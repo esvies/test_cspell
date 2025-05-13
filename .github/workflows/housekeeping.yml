@@ -1,90 +1,96 @@
 ---
-name: Housekeeping
+    name: Housekeeping
 
-on:
-  push:
-    branches:
-      - main
-    paths-ignore:
-      - "cspell.json"
-  pull_request:
-    branches:
-      - main
+    on:
+      push:
+        branches:
+          - main
+        paths-ignore:
+          - "cspell.json"
+      pull_request:
+        branches:
+          - main
 
-permissions:
-  contents: write
+    permissions:
+      contents: write
 
-jobs:
-  validating:
-    runs-on: ubuntu-latest
+    jobs:
+      validating:
+        runs-on: ubuntu-latest
 
-    steps:
-      - name: Check out the code
-        uses: actions/checkout@v4
+        steps:
+          - name: Check out the code
+            uses: actions/checkout@v4
 
-      - name: Cache Node Modules
-        uses: actions/cache@v4
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: ${{ runner.os }}-npm-
+          - name: Cache Node Modules
+            uses: actions/cache@v4
+            with:
+              path: ~/.npm
+              key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
+              restore-keys: ${{ runner.os }}-npm-
 
-      - name: Cache PIP
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: pip-cache-${{ hashFiles('requirements.txt') }}
-          restore-keys: pip-cache-
+          - name: Cache PIP
+            uses: actions/cache@v4
+            with:
+              path: ~/.cache/pip
+              key: pip-cache-${{ hashFiles('requirements.txt') }}
+              restore-keys: pip-cache-
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22"
+          - name: Setup Node.js
+            uses: actions/setup-node@v4
+            with:
+              node-version: "22"
 
-      - name: Install Dependencies
-        run: |
-          npm install -g cspell markdownlint-cli &
-          python -m pip install yamllint &
-          wait
+          - name: Install Dependencies
+            run: |
+              npm install -g cspell markdownlint-cli &
+              python -m pip install yamllint &
+              wait
 
-      - name: Ensure cspell.json Exists
-        run: |
-          if [ ! -f cspell.json ]; then
-            echo '{
-              "ignoreWords": []
-            }' > cspell.json
-          fi
+          - name: Ensure cspell.json Exists
+            run: |
+              if [ ! -f cspell.json ]; then
+                echo '{
+                  "ignoreWords": []
+                }' > cspell.json
+              fi
 
-      - name: Update cspell.json with Usernames
-        env:
-          AUTH_TOKEN: ${{ secrets.ORG_READ_TOKEN }}
-          ORG_NAME: ${{ github.repository_owner }}
-        run: python .github/workflows/update_cspell.py
+          - name: Update cspell.json with Usernames
+            env:
+              AUTH_TOKEN: ${{ secrets.ORG_READ_TOKEN }}
+              ORG_NAME: ${{ github.repository_owner }}
+            run: python .github/workflows/update_cspell.py
 
-      - name: Commit and Push Updates to cspell.json
-        if: success()
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          - name: Commit and Push Updates to cspell.json
+            if: success()
+            env:
+              GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            run: |
+              # Configure Git user
+              git config user.name "github-actions[bot]"
+              git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Check for changes in cspell.json only
-          if [[ $(git status --porcelain cspell.json) ]]; then
-            echo "Changes detected in cspell.json."
-            git add cspell.json
-            git commit -m "[skip cspell] Update cspell.json with org member names"
-            git push
-          else
-            echo "No changes to commit."
-            exit 0
-          fi
+              # Enable commit signing
+              git config commit.gpgSign true
+              git config gpg.format ssh
+              git config user.signingkey $GITHUB_TOKEN
 
-      - name: Run cspell
-        run: cspell --config ./cspell.json "./**/*.md"
+              # Check for changes in cspell.json only
+              if [[ $(git status --porcelain cspell.json) ]]; then
+                echo "Changes detected in cspell.json."
+                git add cspell.json
+                git commit -S -m "[skip cspell] Update cspell.json with org member names"
+                git push
+              else
+                echo "No changes to commit."
+                exit 0
+              fi
 
-      - name: Run markdownlint
-        run: markdownlint "./**/*.md"
+          - name: Run cspell
+            run: cspell --config ./cspell.json "./**/*.md"
 
-      - name: Run yamllint
-        run: yamllint .
+          - name: Run markdownlint
+            run: markdownlint "./**/*.md"
+
+          - name: Run yamllint
+            run: yamllint .
