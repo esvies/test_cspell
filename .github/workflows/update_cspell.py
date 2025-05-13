@@ -121,6 +121,7 @@ def write_ignore_config(words):
         json.dump(config, file, indent=2)
 
     logger.info(f"Ignore config successfully written to {IGNORE_FILE_PATH}.")
+    logger.info(f"Words added to the ignore file: {', '.join(combined_words)}")
 
 def main():
     if not AUTH_TOKEN:
