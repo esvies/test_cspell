@@ -72,14 +72,9 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Enable commit signing
-          git config commit.gpgSign true
-          git config gpg.format ssh
-          git config user.signingkey $GITHUB_TOKEN
-
           # Commit and push changes
           git add cspell.json
-          git commit -S -m "[skip cspell] Update cspell.json with org member names"
+          git commit -m "[skip cspell] Update cspell.json with org member names"
           git push
 
       - name: Run cspell
