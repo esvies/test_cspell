@@ -63,31 +63,45 @@ jobs:
             echo "changes_detected=false" >> $GITHUB_ENV
           fi
 
-      - name: Commit and Push Updates to cspell.json
+      - name: Commit changes using GitHub API
         if: env.changes_detected == 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Configure Git user
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          echo "Committing changes using GitHub API..."
 
-          # Stage changes
-          git add cspell.json
+          # Extract the branch name from the GitHub context
+          BRANCH_NAME=$(echo "${GITHUB_REF#refs/heads/}")
+          echo "Branch name detected: $BRANCH_NAME"
 
-          # Temporarily stash changes to allow pull with rebase
-          git stash --include-untracked
+          # Process changed files
+          FILES_CHANGED=$(git status --porcelain | awk '{print $2}')
+          for file in $FILES_CHANGED; do
+            CONTENT=$(base64 -w 0 "$file")
+            FILENAME=$(basename "$file")
 
-          # Pull the latest changes to avoid conflicts
-          git pull --rebase origin main
+            # Fetch SHA if the file already exists
+            SHA=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+              https://api.github.com/repos/${{ github.repository }}/contents/$file?ref=$BRANCH_NAME | jq -r .sha)
 
-          # Apply the stashed changes
-          git stash pop
+            # Handle new file creation
+            if [ "$SHA" == "null" ]; then
+              SHA=""
+            fi
 
-          # Commit and push changes
-          git add cspell.json
-          git commit -m "[skip cspell] Update cspell.json with org member names"
-          git push
+            # Send API request to update or create file
+            RESPONSE=$(curl -s -X PUT -H "Authorization: token $GITHUB_TOKEN" \
+              -d "{\"message\":\"Update $FILENAME\", \"content\":\"$CONTENT\", \"branch\":\"$BRANCH_NAME\", \"sha\":\"$SHA\"}" \
+              https://api.github.com/repos/${{ github.repository }}/contents/$file)
+
+            # Check for errors
+            if echo "$RESPONSE" | grep -q "message"; then
+              echo "Error updating $FILENAME: $(echo "$RESPONSE" | jq -r .message)"
+              exit 1
+            else
+              echo "Successfully updated $FILENAME"
+            fi
+          done
 
       - name: Run cspell
         run: cspell --config ./cspell.json "./**/*.md"
