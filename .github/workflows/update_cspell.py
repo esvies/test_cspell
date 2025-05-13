@@ -50,20 +50,21 @@ def get_user_name(username):
     user_data = response.json()
     return user_data.get("name")
 
-def extract_words(members):
+def extract_words(members, existing_words):
     """
     Extracts names from the organization members and returns a set of unique names.
+    Only adds names that are not already present in the cspell.json.
     """
     words = set()
     for member in members:
         username = member.get("login", "")
         full_name = get_user_name(username)
-        if full_name:
+        if full_name and full_name not in existing_words:
             print(f"Adding {full_name} to ignore words")
             words.add(full_name)
     return words
 
-def update_cspell(words):
+def update_cspell(words):  # Modified to include additional logging for no members found
     """
     Updates the cspell.json file by adding new words to the 'ignoreWords' list.
     """
@@ -88,19 +89,32 @@ def update_cspell(words):
             json.dump(cspell_data, file, indent=2)
         print("cspell.json updated successfully.")
     else:
-        print("No new words to add.")
+        print("No new words to add or no new members found.")
+
 
 def main():
     if not AUTH_TOKEN:
         print("AUTH_TOKEN is not set. Skipping member fetching and processing.")
         return
 
+    if not os.path.exists(CSPELL_FILE):
+        print("cspell.json not found. Exiting.")
+        return
+
+    with open(CSPELL_FILE, "r") as file:
+        cspell_data = json.load(file)
+        existing_words = set(cspell_data.get("ignoreWords", []))
+
     members = fetch_members()
     if not members:
         print("No members fetched. Exiting.")
         return
 
-    words = extract_words(members)
+    words = extract_words(members, existing_words)
+    if not words:
+        print("No new members found or no new words to add to cspell.json.")
+        print("No new members to process or add to cspell.json.")
+        return
     update_cspell(words)
 
 if __name__ == "__main__":
