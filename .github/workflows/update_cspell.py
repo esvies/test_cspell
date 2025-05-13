@@ -70,16 +70,20 @@ def get_user_name(username):
 
 def extract_words(members, existing_words):
     """
-    Extracts names from the organization members and returns a set of unique names.
-    Only adds names that are not already present in the cspell.json.
+    Extracts names from the organization members and returns a set of unique words.
+    Splits full names into individual words and ensures they are not already present in cspell.json.
     """
     words = set()
     for member in members:
         username = member.get("login", "")
         full_name = get_user_name(username)
-        if full_name and full_name not in existing_words:
-            print(f"Adding {full_name} to ignore words")
-            words.add(full_name)
+        if full_name:
+            # Split full name into individual words
+            name_parts = full_name.split()
+            for part in name_parts:
+                if part not in existing_words:
+                    print(f"Adding {part} to ignore words")
+                    words.add(part)
     return words
 
 def update_cspell(words):
