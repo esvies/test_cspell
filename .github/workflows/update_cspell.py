@@ -8,6 +8,24 @@ AUTH_TOKEN = os.getenv("AUTH_TOKEN", None)
 
 CSPELL_FILE = "cspell.json"
 
+def ensure_cspell_exists():
+    """
+    Ensures that the cspell.json file exists. If not, it creates it with default content.
+    """
+    if not os.path.exists(CSPELL_FILE):
+        print("cspell.json not found. Creating default cspell.json...")
+        cspell_data = {
+            "version": "0.2",
+            "language": "en",
+            "ignorePaths": [".devcontainer/**", ".vscode/**", ".github/**"],
+            "ignoreWords": []
+        }
+        with open(CSPELL_FILE, "w") as file:
+            json.dump(cspell_data, file, indent=2)
+        print("Default cspell.json created.")
+    else:
+        print("cspell.json already exists.")
+
 def fetch_members():
     """
     Fetches organization members from the GitHub API and returns them as a list of dictionaries.
@@ -64,20 +82,12 @@ def extract_words(members, existing_words):
             words.add(full_name)
     return words
 
-def update_cspell(words):  # Modified to include additional logging for no members found
+def update_cspell(words):
     """
     Updates the cspell.json file by adding new words to the 'ignoreWords' list.
     """
-    if not os.path.exists(CSPELL_FILE):
-        cspell_data = {
-            "version": "0.2",
-            "language": "en",
-            "ignorePaths": [".devcontainer/**", ".vscode/**", ".github/**"],
-            "ignoreWords": []
-        }
-    else:
-        with open(CSPELL_FILE, "r") as file:
-            cspell_data = json.load(file)
+    with open(CSPELL_FILE, "r") as file:
+        cspell_data = json.load(file)
 
     existing_words = set(cspell_data.get("ignoreWords", []))
     new_words = words - existing_words
@@ -91,15 +101,12 @@ def update_cspell(words):  # Modified to include additional logging for no membe
     else:
         print("No new words to add or no new members found.")
 
-
 def main():
     if not AUTH_TOKEN:
         print("AUTH_TOKEN is not set. Skipping member fetching and processing.")
         return
 
-    if not os.path.exists(CSPELL_FILE):
-        print("cspell.json not found. Exiting.")
-        return
+    ensure_cspell_exists()
 
     with open(CSPELL_FILE, "r") as file:
         cspell_data = json.load(file)
@@ -114,6 +121,7 @@ def main():
     if not words:
         print("No new members found or no new words to add to cspell.json.")
         return
+
     update_cspell(words)
 
 if __name__ == "__main__":
