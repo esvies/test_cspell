@@ -64,7 +64,7 @@ jobs:
           fi
 
       - name: Commit and Push Updates to cspell.json
-        if: ${{ steps.check_cspell_changes.outputs.changes_detected == 'true' }}
+        if: env.changes_detected == 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
