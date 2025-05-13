@@ -47,14 +47,6 @@ jobs:
           python -m pip install yamllint &
           wait
 
-      - name: Ensure cspell.json Exists
-        run: |
-          if [ ! -f cspell.json ]; then
-            echo '{
-              "ignoreWords": []
-            }' > cspell.json
-          fi
-
       - name: Update cspell.json with Usernames
         id: update_cspell
         env:
